@@ -550,4 +550,35 @@
     <script src="admin.js"></script>
 </body>
 </html>
-EOF
+<!-- Кнопка перевода -->
+<button id="lang-switcher" style="
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: white;
+    color: black;
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-weight: bold;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+">
+    EN
+</button>
+
+<script>
+// Простой переключатель языка
+const langSwitcher = document.getElementById('lang-switcher');
+let currentLang = localStorage.getItem('site_language') || 'ru';
+
+langSwitcher.textContent = currentLang === 'ru' ? 'EN' : 'RU';
+
+langSwitcher.onclick = function() {
+    const newLang = currentLang === 'ru' ? 'en' : 'ru';
+    localStorage.setItem('site_language', newLang);
+    location.reload();
+};
+</script>

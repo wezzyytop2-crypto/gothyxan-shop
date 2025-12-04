@@ -1,92 +1,130 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход в админку - GOTHYXAN</title>
     <style>
-        body { 
-            font-family: Arial; 
-            background: #111; 
-            color: white; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            margin: 0; 
+        body {
+            font-family: Arial;
+            background: #111;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
         }
-        .login-container { 
-            background: #222; 
-            padding: 40px; 
-            border-radius: 10px; 
-            width: 300px; 
-            text-align: center; 
-            border: 1px solid #333; 
+
+        .login-container {
+            background: #222;
+            padding: 40px;
+            border-radius: 10px;
+            width: 350px;
+            text-align: center;
+            border: 1px solid #333;
         }
-        input { 
-            width: 100%; 
-            padding: 12px; 
-            margin: 10px 0; 
-            background: #333; 
-            border: 1px solid #444; 
-            color: white; 
-            border-radius: 5px; 
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: #333;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 5px;
         }
-        button { 
-            width: 100%; 
-            padding: 12px; 
-            background: white; 
-            color: black; 
-            border: none; 
-            border-radius: 5px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            margin-top: 20px; 
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: white;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
         }
-        .error { 
-            color: #ff4444; 
-            margin-top: 10px; 
-            display: none; 
+
+        .error {
+            color: #ff4444;
+            margin-top: 10px;
+            display: none;
         }
-        .hidden { display: none; }
+
+        .info-box {
+            background: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            text-align: left;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
     <div class="login-container">
         <h2>🔐 Вход в админ-панель</h2>
-        <p style="color: #888; margin-bottom: 30px;">GOTHYXAN STORE</p>
-        
-        <input type="password" id="password" placeholder="Введите пароль">
-        <button onclick="login()">ВОЙТИ</button>
-        
+        <p style="color: #888; margin-bottom: 30px;">GOTHYXAN STORE • АВТОСОХРАНЕНИЕ</p>
+
+        <input type="password" id="password" placeholder="Пароль админки" value="admin123">
+        <input type="text" id="github-token" placeholder="GitHub Token (для автосохранения)">
+
+        <button onclick="login()">ВОЙТИ И НАСТРОИТЬ АВТОСОХРАНЕНИЕ</button>
+
         <div id="error" class="error">Неверный пароль</div>
-        
-        <div style="margin-top: 30px; font-size: 12px; color: #666;">
-            <p>Пароль по умолчанию: <code>admin123</code></p>
-            <p>Измените в файле admin/admin.js</p>
+
+        <div class="info-box">
+            <p><strong>Для полной автоматизации:</strong></p>
+            <ol>
+                <li>Пароль по умолчанию: <code>admin123</code></li>
+                <li>GitHub Token получи на: <a href="https://github.com/settings/tokens" style="color: #4CAF50;">github.com/settings/tokens</a></li>
+                <li>Выбери scopes: <code>repo</code> и <code>workflow</code></li>
+                <li>Без токена данные сохранятся только локально</li>
+            </ol>
         </div>
     </div>
-    
+
     <script>
-        // Пароль по умолчанию (измени в admin.js)
-        const DEFAULT_PASSWORD = 'admin123';
-        
+        // Проверка если уже авторизован
+        if (localStorage.getItem('admin_authenticated') === 'true') {
+            window.location.href = 'index.html';
+        }
+
         function login() {
             const password = document.getElementById('password').value;
-            const savedPassword = localStorage.getItem('admin_password') || DEFAULT_PASSWORD;
-            
+            const githubToken = document.getElementById('github-token').value.trim();
+            const savedPassword = localStorage.getItem('admin_password') || 'admin123';
+
             if (password === savedPassword) {
                 localStorage.setItem('admin_authenticated', 'true');
+
+                // Сохраняем GitHub Token если введен
+                if (githubToken) {
+                    localStorage.setItem('github_token', githubToken);
+
+                    // Сохраняем в настройках
+                    let settings = JSON.parse(localStorage.getItem('gothyxan_settings')) || {};
+                    settings.github_token = githubToken;
+                    localStorage.setItem('gothyxan_settings', JSON.stringify(settings));
+                }
+
                 window.location.href = 'index.html';
             } else {
                 document.getElementById('error').style.display = 'block';
             }
         }
-        
+
         // Enter для входа
         document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') login();
+        });
+
+        document.getElementById('github-token').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') login();
         });
     </script>
 </body>
 </html>
+EOF
