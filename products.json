@@ -1,0 +1,10 @@
+{
+  "id": 4,
+  "name": "FLARED JEANS",
+  "category": "men",
+  "price": 89$,
+  "image": "balenciaga_jeans_1.jpg",
+  "description": "High-waisted denim with retro flare silhouette. Made from premium stretch cotton for comfort and movement. Vintage-inspired wash with subtle distressing details.",
+  "sizes": ["S", "M", "L", "XL"],
+  "inStock": true
+}
