@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Админ-панель GOTHYXAN</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .admin-container { max-width: 1200px; margin: 0 auto; }
+        .admin-section { margin-bottom: 40px; padding: 20px; border: 1px solid #ddd; }
+        .product-form input, .product-form textarea { 
+            display: block; margin: 10px 0; padding: 8px; width: 300px; 
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <h1>Админ-панель GOTHYXAN Store</h1>
+        
+        <div class="admin-section">
+            <h2>Добавить товар</h2>
+            <form class="product-form" id="addProductForm">
+                <input type="text" placeholder="Название товара" required>
+                <input type="number" placeholder="Цена" required>
+                <input type="text" placeholder="Категория">
+                <input type="text" placeholder="Имя файла изображения">
+                <textarea placeholder="Описание" rows="4"></textarea>
+                <button type="submit">Добавить товар</button>
+            </form>
+        </div>
+        
+        <div class="admin-section">
+            <h2>Все товары</h2>
+            <div id="productsList"></div>
+        </div>
+    </div>
+    
+    <script src="admin.js"></script>
+</body>
+</html>

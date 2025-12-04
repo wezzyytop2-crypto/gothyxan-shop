@@ -1,0 +1,34 @@
+{
+  "categories": [
+    {
+      "id": "women",
+      "name": "WOMEN",
+      "slug": "women",
+      "image": "category-women.jpg"
+    },
+    {
+      "id": "men",
+      "name": "MEN",
+      "slug": "men",
+      "image": "category-men.jpg"
+    },
+    {
+      "id": "outerwear",
+      "name": "OUTERWEAR",
+      "slug": "outerwear",
+      "image": "category-outerwear.jpg"
+    },
+    {
+      "id": "omen",
+      "name": "OMEN",
+      "slug": "omen",
+      "image": "category-omen.jpg"
+    },
+    {
+      "id": "new",
+      "name": "NEW COLLECTION",
+      "slug": "new-collection",
+      "image": "category-new.jpg"
+    }
+  ]
+}
