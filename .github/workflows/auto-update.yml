@@ -1,1 +1,41 @@
-ы
+name: Auto Update from Admin Panel
+
+on:
+  repository_dispatch:
+    types: [update_products]
+
+jobs:
+  update-products:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Update products.json
+        run: |
+          # Создаем новый products.json из данных админки
+          echo '${{ github.event.client_payload.products_data }}' > src/data/products.json
+          
+          # Форматируем JSON
+          python3 -m json.tool src/data/products.json > temp.json
+          mv temp.json src/data/products.json
+          
+      - name: Update categories.json
+        run: |
+          if [ '${{ github.event.client_payload.categories_data }}' != 'null' ]; then
+            echo '${{ github.event.client_payload.categories_data }}' > src/data/categories.json
+            python3 -m json.tool src/data/categories.json > temp.json
+            mv temp.json src/data/categories.json
+          fi
+          
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add src/data/*.json
+          git commit -m "🔄 Автообновление от админки: ${{ github.event.client_payload.message }}"
+          git push
+EOF
