@@ -1,13 +1,13 @@
-﻿// АВТОМАТИЗИРОВАННАЯ АДМИН-ПАНЕЛЬ GOTHYXAN
-class AutoAdminPanel {
+﻿cat > admin/admin.js << 'EOF'
+// ПОЛНОСТЬЮ АВТОМАТИЗИРОВАННАЯ АДМИНКА
+class FullAutoAdmin {
     constructor() {
-        // Проверка авторизации
         if (!this.checkAuth()) {
             window.location.href = 'login.html';
             return;
         }
         
-        this.GITHUB_TOKEN = localStorage.getItem('github_token') || '';
+        this.GITHUB_TOKEN = ''; // Не храним в коде!
         this.REPO_OWNER = 'wezzyytop2-crypto';
         this.REPO_NAME = 'gothyxan-shop';
         this.products = [];
@@ -21,309 +21,275 @@ class AutoAdminPanel {
     }
     
     async init() {
-        // Загружаем настройки
-        this.loadSettings();
-        
-        // Загружаем данные
-        await this.loadProductsFromGitHub();
-        await this.loadCategoriesFromGitHub();
-        
-        // Инициализируем UI
+        await this.loadData();
         this.initUI();
         this.bindEvents();
+        this.setupAutoSave();
         
-        console.log('Автоадминка загружена');
+        console.log('Полностью автоматизированная админка готова');
     }
     
-    loadSettings() {
-        this.settings = JSON.parse(localStorage.getItem('gothyxan_settings')) || {
-            github_token: '',
-            store_name: 'GOTHYXAN STORE',
-            currency: '€'
-        };
-        
-        if (!this.GITHUB_TOKEN && this.settings.github_token) {
-            this.GITHUB_TOKEN = this.settings.github_token;
-        }
-    }
-    
-    async loadProductsFromGitHub() {
+    async loadData() {
         try {
-            const response = await fetch('../src/data/products.json');
-            const data = await response.json();
-            this.products = data.products || data || [];
+            // Загружаем с сайта
+            const [productsRes, catsRes] = await Promise.all([
+                fetch('../src/data/products.json'),
+                fetch('../src/data/categories.json')
+            ]);
+            
+            this.products = (await productsRes.json()).products || [];
+            this.categories = (await catsRes.json()).categories || [];
+            
             this.renderProducts();
-        } catch (error) {
-            console.error('Ошибка загрузки товаров:', error);
-            this.products = [];
-        }
-    }
-    
-    async loadCategoriesFromGitHub() {
-        try {
-            const response = await fetch('../src/data/categories.json');
-            const data = await response.json();
-            this.categories = data.categories || data || [];
             this.renderCategories();
         } catch (error) {
-            console.error('Ошибка загрузки категорий:', error);
-            this.categories = [];
+            console.error('Ошибка загрузки:', error);
         }
     }
     
-    // ========== СОХРАНЕНИЕ НА GITHUB ==========
+    // ========== ПОЛНАЯ АВТОМАТИЗАЦИЯ ==========
     
-    async saveToGitHub(filePath, content, commitMessage) {
-        if (!this.GITHUB_TOKEN) {
-            this.showGitHubTokenPrompt();
-            return false;
-        }
-        
-        try {
-            // 1. Получаем текущий SHA файла
-            const fileUrl = `https://api.github.com/repos/${this.REPO_OWNER}/${this.REPO_NAME}/contents/${filePath}`;
-            const fileResponse = await fetch(fileUrl, {
-                headers: {
-                    'Authorization': `token ${this.GITHUB_TOKEN}`,
-                    'Accept': 'application/vnd.github.v3+json'
+    async triggerGitHubUpdate(type, data, message) {
+        // Используем GitHub API через repository_dispatch
+        const response = await fetch(`https://api.github.com/repos/${this.REPO_OWNER}/${this.REPO_NAME}/dispatches`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                event_type: 'update_products',
+                client_payload: {
+                    type: type,
+                    products_data: type === 'products' ? JSON.stringify(data) : null,
+                    categories_data: type === 'categories' ? JSON.stringify(data) : null,
+                    message: message,
+                    timestamp: new Date().toISOString()
                 }
-            });
-            
-            let sha = '';
-            if (fileResponse.ok) {
-                const fileData = await fileResponse.json();
-                sha = fileData.sha;
-            }
-            
-            // 2. Обновляем файл
-            const updateResponse = await fetch(fileUrl, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `token ${this.GITHUB_TOKEN}`,
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    message: commitMessage,
-                    content: btoa(unescape(encodeURIComponent(content))),
-                    sha: sha || undefined
-                })
-            });
-            
-            if (updateResponse.ok) {
-                this.showSuccess('✅ Данные успешно сохранены на GitHub!');
-                return true;
-            } else {
-                const error = await updateResponse.json();
-                this.showError('Ошибка сохранения: ' + (error.message || 'Неизвестная ошибка'));
-                return false;
-            }
-            
-        } catch (error) {
-            console.error('GitHub API ошибка:', error);
-            this.showError('Ошибка соединения с GitHub');
-            return false;
-        }
+            })
+        });
+        
+        return response.ok;
     }
     
-    async saveProducts() {
+    async autoSaveProducts() {
         const productsData = {
             products: this.products,
             last_updated: new Date().toISOString(),
-            total: this.products.length
+            total: this.products.length,
+            auto_generated: true
         };
         
-        const success = await this.saveToGitHub(
-            'src/data/products.json',
-            JSON.stringify(productsData, null, 2),
-            '🔄 Автообновление товаров через админку'
-        );
+        // Показываем статус
+        this.showStatus('🔄 Сохранение на GitHub...');
         
-        if (success) {
-            // Обновляем сайт через 5 секунд
-            setTimeout(() => {
-                this.showNotification('🔄 Сайт обновляется...');
-            }, 5000);
-        }
-    }
-    
-    async saveCategories() {
-        const categoriesData = {
-            categories: this.categories,
-            last_updated: new Date().toISOString()
-        };
-        
-        await this.saveToGitHub(
-            'src/data/categories.json',
-            JSON.stringify(categoriesData, null, 2),
-            '🏷️ Обновление категорий через админку'
-        );
-    }
-    
-    // ========== УПРАВЛЕНИЕ ТОВАРАМИ ==========
-    
-    async addProduct(productData) {
-        // Генерируем ID
-        const newId = this.products.length > 0 
-            ? Math.max(...this.products.map(p => p.id)) + 1 
-            : 1;
-        
-        const newProduct = {
-            id: newId,
-            ...productData,
-                createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-    };
-        
-    this.products.push(newProduct);
-        await this.saveProducts();
-        this.renderProducts();
-        
-        return newProduct;
-    }
-    
-    async updateProduct(productId, updates) {
-        const index = this.products.findIndex(p => p.id === productId);
-        if (index === -1) return false;
-        
-        this.products[index] = {
-            ...this.products[index],
-            ...updates,
-            updatedAt: new Date().toISOString()
-        };
-        
-        await this.saveProducts();
-        this.renderProducts();
-        return true;
-    }
-    
-    async deleteProduct(productId) {
-        if (!confirm('Удалить этот товар?')) return false;
-        
-        this.products = this.products.filter(p => p.id !== productId);
-        await this.saveProducts();
-        this.renderProducts();
-        return true;
-    }
-    
-    // ========== UI ФУНКЦИИ ==========
-    
-    showGitHubTokenPrompt() {
-        const token = prompt('Введите GitHub Personal Access Token:\n\n1. Зайдите на: https://github.com/settings/tokens\n2. Создайте token с доступом "repo"\n3. Вставьте сюда:');
-        
-        if (token && token.trim()) {
-            this.GITHUB_TOKEN = token.trim();
-            localStorage.setItem('github_token', token.trim());
+        try {
+            // Вариант A: GitHub Actions (рекомендуется)
+            const success = await this.triggerGitHubUpdate(
+                'products',
+                productsData,
+                `Обновлено ${this.products.length} товаров`
+            );
             
-            // Сохраняем в настройках
-            if (!this.settings.github_token) {
-                this.settings.github_token = token.trim();
-                localStorage.setItem('gothyxan_settings', JSON.stringify(this.settings));
+            if (success) {
+                this.showStatus('✅ Данные отправлены! Сайт обновится через 1-2 минуты.', 'success');
+                
+                // Автоматически перезагружаем данные через 5 секунд
+                setTimeout(() => {
+                    this.loadData();
+                }, 5000);
+            } else {
+                throw new Error('GitHub API error');
             }
             
-            this.showSuccess('✅ Токен сохранен! Теперь можно сохранять данные.');
-            return true;
-        } else {
-            this.showError('Токен обязателен для автоматического сохранения!');
-            return false;
+        } catch (error) {
+            console.log('GitHub Actions не сработал, используем fallback...');
+            
+            // Вариант B: Fallback - показываем JSON для ручного копирования
+            this.showJsonForManualCopy(productsData);
         }
     }
     
-    showSuccess(message) {
-        this.showNotification(message, 'success');
-    }
-    
-    showError(message) {
-        this.showNotification(message, 'error');
-    }
-    
-    showNotification(message, type = 'info') {
-        // Удаляем старые уведомления
-        const oldNotification = document.querySelector('.admin-notification');
-        if (oldNotification) oldNotification.remove();
+    showJsonForManualCopy(data) {
+        const jsonString = JSON.stringify(data, null, 2);
         
-        // Создаем новое
-        const notification = document.createElement('div');
-        notification.className = 'admin-notification';
-        notification.innerHTML = `
+        this.showNotification(`
+            <div style="max-height: 400px; overflow-y: auto;">
+                <h4>📋 Скопируй этот JSON и замени на GitHub:</h4>
+                <p><code>src/data/products.json</code></p>
+                <textarea 
+                    id="json-output" 
+                    style="
+                        width: 100%;
+                        height: 200px;
+                        background: #222;
+                        color: white;
+                        border: 1px solid #333;
+                        padding: 10px;
+                        font-family: monospace;
+                        margin: 10px 0;
+                    "
+                >${jsonString}</textarea>
+                <button onclick="copyJson()" class="btn">📋 Копировать JSON</button>
+                <button onclick="this.parentElement.parentElement.remove()" class="btn">✕ Закрыть</button>
+            </div>
+        `, 'info');
+        
+        window.copyJson = () => {
+            const textarea = document.getElementById('json-output');
+            textarea.select();
+            document.execCommand('copy');
+            alert('JSON скопирован в буфер обмена!');
+        };
+    }
+    
+    setupAutoSave() {
+        // Автосохранение при изменении данных
+        let saveTimeout;
+        
+        const scheduleSave = () => {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                this.autoSaveProducts();
+            }, 2000); // Сохраняет через 2 секунды после изменений
+        };
+        
+        // Отслеживаем изменения в формах
+        document.addEventListener('input', (e) => {
+            if (e.target.closest('#product-form')) {
+                scheduleSave();
+            }
+        });
+    }
+    
+    // ========== UI И РЕНДЕРИНГ ==========
+    
+    renderProducts() {
+        const container = document.getElementById('products-list');
+        if (!container) return;
+        
+        container.innerHTML = this.products.map(product => `
+            <div class="product-card" data-id="${product.id}">
+                <div style="display: flex; gap: 15px; align-items: start;">
+                    <img src="${product.image}" 
+                         style="width: 80px; height: 80px; object-fit: cover; border-radius: 5px;">
+                    <div style="flex: 1;">
+                        <h3 style="margin: 0 0 5px 0;">${product.name}</h3>
+                        <p style="color: white; font-weight: bold; margin: 0 0 5px 0;">
+                            ${product.price} €
+                        </p>
+                        <p style="color: #888; font-size: 0.9em; margin: 0;">
+                            ${product.category} • ID: ${product.id}
+                        </p>
+                    </div>
+                    <div>
+                        <button onclick="admin.editProduct(${product.id})" 
+                                style="background: #333; border: none; color: white; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-left: 5px;">
+                            ✏️
+                        </button>
+                        <button onclick="admin.deleteProduct(${product.id})" 
+                                style="background: #d32f2f; border: none; color: white; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-left: 5px;">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+                ${product.description ? `
+                    <p style="color: #aaa; margin-top: 10px; font-size: 0.9em;">
+                        ${product.description}
+                    </p>
+                ` : ''}
+            </div>
+        `).join('');
+    }
+    
+    renderCategories() {
+        const container = document.getElementById('categories-list');
+        if (!container) return;
+        
+        container.innerHTML = this.categories.map(cat => `
+            <div class="product-card">
+                <h3 style="margin: 0 0 10px 0;">${cat.name}</h3>
+                <p style="color: #888; margin: 0;">/${cat.slug}</p>
+            </div>
+        `).join('');
+    }
+    
+    showStatus(message, type = 'info') {
+        // Удаляем старый статус
+        const oldStatus = document.getElementById('auto-save-status');
+        if (oldStatus) oldStatus.remove();
+        
+        // Создаем новый
+        const status = document.createElement('div');
+        status.id = 'auto-save-status';
+        status.innerHTML = `
             <div style="
                 position: fixed;
-                top: 20px;
-                right: 20px;
+                bottom: 20px;
+                left: 20px;
                 background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
                 color: white;
-                padding: 15px 25px;
+                padding: 10px 20px;
                 border-radius: 5px;
-                z-index: 10000;
-                animation: slideIn 0.3s ease;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                max-width: 400px;
+                z-index: 9999;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                animation: slideInUp 0.3s ease;
             ">
                 ${message}
             </div>
         `;
         
-        document.body.appendChild(notification);
+        document.body.appendChild(status);
         
+        // Автоматически скрываем через 5 секунд
         setTimeout(() => {
-            notification.remove();
+            if (status.parentElement) {
+                status.style.animation = 'slideInUp 0.3s ease reverse';
+                setTimeout(() => status.remove(), 300);
+            }
         }, 5000);
     }
     
-        renderProducts() {
-            const container = document.getElementById('products-list');
-            if (!container) return;
-        
-            if (this.products.length === 0) {
-                container.innerHTML = '<p style="color: #888; text-align: center; padding: 40px;">Товаров пока нет</p>';
-                return;
-            }
-        
-            container.innerHTML = this.products.map(product => `
-            <div class="product-card">
-                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-                    <img src="${product.image || 'https://via.placeholder.com/100'}" 
-                         style="width: 100px; height: 100px; object-fit: cover; border-radius: 5px;">
-                    <div style="flex: 1;">
-                        <h3 style="margin-bottom: 5px;">${product.name}</h3>
-                        <p style="color: white; font-size: 1.2em; font-weight: bold;">
-                            ${product.price} ${this.settings.currency}
-                        </p>
-                        <p style="color: #888; font-size: 0.9em; margin-top: 5px;">
-                            ID: ${product.id} • ${product.category} • ${product.inStock ? 'В наличии' : 'Нет в наличии'}
-                        </p>
-                    </div>
-                </div>
-                
-                <div style="display: flex; gap: 10px; margin-top: 15px;">
-                    <button onclick="adminPanel.editProduct(${product.id})" class="btn" style="flex: 1; padding: 8px;">
-                        ✏️ Редактировать
-                    </button>
-                    <button onclick="adminPanel.deleteProduct(${product.id})" class="btn btn-danger" style="flex: 1; padding: 8px;">
-                        🗑️ Удалить
-                    </button>
-                </div>
+        showNotification(html, type = 'info') {
+            const notification = document.createElement('div');
+            notification.innerHTML = `
+            <div style="
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: #222;
+                color: white;
+                padding: 30px;
+                border-radius: 10px;
+                z-index: 10000;
+                border: 1px solid #333;
+                max-width: 600px;
+                width: 90%;
+                max-height: 80vh;
+                overflow-y: auto;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            ">
+                ${html}
             </div>
-        `).join('');
-        }
-    
-        renderCategories() {
-            const container = document.getElementById('categories-list');
-            if (!container) return;
+            <div style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.7);
+                z-index: 9999;
+            " onclick="this.parentElement.remove()"></div>
+        `;
         
-            container.innerHTML = this.categories.map(cat => `
-            <div class="product-card">
-                <h3>${cat.name}</h3>
-                <p style="color: #888;">${cat.slug}</p>
-            </div>
-        `).join('');
+            document.body.appendChild(notification);
         }
     
         initUI() {
-            // Показываем первую вкладку
             this.showTab('products');
         
-            // Обновляем превью изображения
+            // Превью изображений
             const imageInput = document.getElementById('product-image');
             if (imageInput) {
                 imageInput.addEventListener('input', (e) => {
@@ -338,26 +304,15 @@ class AutoAdminPanel {
         }
     
         showTab(tabId) {
-            // Скрываем все вкладки
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.admin-nav a').forEach(a => a.classList.remove('active'));
         
-            // Показываем нужную
-            const tab = document.getElementById(tabId);
-            if (tab) tab.classList.add('active');
-        
-            // Обновляем меню
-            document.querySelectorAll('.admin-nav a').forEach(link => {
-                link.classList.remove('active');
-                if (link.getAttribute('href') === '#' + tabId) {
-                    link.classList.add('active');
-                }
-            });
+            document.getElementById(tabId)?.classList.add('active');
+            document.querySelector(`.admin-nav a[href="#${tabId}"]`)?.classList.add('active');
         }
     
         bindEvents() {
-            // Форма добавления товара
+            // Форма товара
             const productForm = document.getElementById('product-form');
             if (productForm) {
                 productForm.addEventListener('submit', async (e) => {
@@ -369,16 +324,20 @@ class AutoAdminPanel {
                         category: document.getElementById('product-category').value,
                         description: document.getElementById('product-description').value,
                         image: document.getElementById('product-image').value,
-                        sizes: document.getElementById('product-sizes').value.split(',').map(s => s.trim()),
-                        colors: document.getElementById('product-colors').value.split(',').map(c => c.trim()),
-                        tags: document.getElementById('product-tags').value.split(',').map(t => t.trim()),
-                        inStock: true
+                        sizes: document.getElementById('product-sizes').value.split(',').map(s => s.trim()).filter(Boolean),
+                        colors: document.getElementById('product-colors').value.split(',').map(c => c.trim()).filter(Boolean),
+                        tags: document.getElementById('product-tags').value.split(',').map(t => t.trim()).filter(Boolean),
+                        inStock: true,
+                        createdAt: new Date().toISOString(),
+                        id: this.products.length > 0 ? Math.max(...this.products.map(p => p.id)) + 1 : 1
                     };
                 
-                    await this.addProduct(productData);
-                    productForm.reset();
+                    this.products.push(productData);
+                    await this.autoSaveProducts();
+                    this.renderProducts();
                 
-                    // Сбрасываем превью
+                    // Сбрасываем форму но оставляем превью
+                    productForm.reset();
                     const preview = document.getElementById('image-preview');
                     if (preview) {
                         preview.style.display = 'none';
@@ -387,34 +346,24 @@ class AutoAdminPanel {
                 });
             }
         
-            // Форма настроек
+            // Настройки
             const settingsForm = document.getElementById('settings-form');
             if (settingsForm) {
-                // Заполняем форму
-                document.getElementById('store-name').value = this.settings.store_name || 'GOTHYXAN STORE';
-                document.getElementById('store-email').value = this.settings.store_email || 'orders@gothyxan.com';
-                document.getElementById('store-phone').value = this.settings.store_phone || '+7 (999) 123-45-67';
-                document.getElementById('admin-password').value = this.settings.admin_password || 'admin123';
-                document.getElementById('ipapi-key').value = this.settings.ipapi_key || '';
-                document.getElementById('store-currency').value = this.settings.currency || '€';
-            
                 settingsForm.addEventListener('submit', (e) => {
                     e.preventDefault();
                 
-                    this.settings = {
+                    const settings = {
                         store_name: document.getElementById('store-name').value,
                         store_email: document.getElementById('store-email').value,
                         store_phone: document.getElementById('store-phone').value,
                         admin_password: document.getElementById('admin-password').value,
-                        ipapi_key: document.getElementById('ipapi-key').value,
-                        currency: document.getElementById('store-currency').value,
-                        github_token: this.GITHUB_TOKEN
+                        currency: document.getElementById('store-currency').value
                     };
                 
-                    localStorage.setItem('gothyxan_settings', JSON.stringify(this.settings));
+                    localStorage.setItem('gothyxan_settings', JSON.stringify(settings));
                     localStorage.setItem('admin_password', document.getElementById('admin-password').value);
                 
-                    this.showSuccess('✅ Настройки сохранены!');
+                    this.showStatus('✅ Настройки сохранены!', 'success');
                 });
             }
         }
@@ -423,17 +372,17 @@ class AutoAdminPanel {
             const product = this.products.find(p => p.id === productId);
             if (!product) return;
         
-            // Заполняем форму редактирования
+            // Заполняем форму
             document.getElementById('product-name').value = product.name;
             document.getElementById('product-price').value = product.price;
             document.getElementById('product-category').value = product.category;
-            document.getElementById('product-description').value = product.description;
+            document.getElementById('product-description').value = product.description || '';
             document.getElementById('product-image').value = product.image;
             document.getElementById('product-sizes').value = product.sizes?.join(', ') || '';
             document.getElementById('product-colors').value = product.colors?.join(', ') || '';
             document.getElementById('product-tags').value = product.tags?.join(', ') || '';
         
-            // Показываем превью
+            // Превью
             const preview = document.getElementById('image-preview');
             if (preview && product.image) {
                 preview.src = product.image;
@@ -441,69 +390,99 @@ class AutoAdminPanel {
                 document.getElementById('preview-text').style.display = 'none';
             }
         
-            // Меняем кнопку сохранения
+            // Меняем кнопку
             const submitBtn = document.querySelector('#product-form button[type="submit"]');
             const oldText = submitBtn.textContent;
             submitBtn.textContent = '💾 ОБНОВИТЬ ТОВАР';
+        
+            // Временно меняем обработчик
+            const originalSubmit = submitBtn.onclick;
             submitBtn.onclick = async (e) => {
                 e.preventDefault();
             
-                const updates = {
-                    name: document.getElementById('product-name').value,
+                const updatedProduct = {
+                    ...product,
+                        name: document.getElementById('product-name').value,
                     price: parseFloat(document.getElementById('product-price').value),
-                    category: document.getElementById('product-category').value,
-                    description: document.getElementById('product-description').value,
-                    image: document.getElementById('product-image').value,
-                    sizes: document.getElementById('product-sizes').value.split(',').map(s => s.trim()),
-                    colors: document.getElementById('product-colors').value.split(',').map(c => c.trim()),
-                    tags: document.getElementById('product-tags').value.split(',').map(t => t.trim())
-                };
-            
-                await this.updateProduct(productId, updates);
-            
-                // Возвращаем кнопку в исходное состояние
-                submitBtn.textContent = oldText;
-                submitBtn.onclick = null;
-            
-                // Показываем вкладку с товарами
-                this.showTab('products');
+                category: document.getElementById('product-category').value,
+                description: document.getElementById('product-description').value,
+                image: document.getElementById('product-image').value,
+                sizes: document.getElementById('product-sizes').value.split(',').map(s => s.trim()).filter(Boolean),
+                colors: document.getElementById('product-colors').value.split(',').map(c => c.trim()).filter(Boolean),
+                tags: document.getElementById('product-tags').value.split(',').map(t => t.trim()).filter(Boolean),
+                updatedAt: new Date().toISOString()
             };
+            
+            const index = this.products.findIndex(p => p.id === productId);
+            this.products[index] = updatedProduct;
+            
+            await this.autoSaveProducts();
+            this.renderProducts();
+            
+            // Возвращаем кнопку
+            submitBtn.textContent = oldText;
+            submitBtn.onclick = originalSubmit;
+            this.showTab('products');
+        };
         
-            // Показываем вкладку добавления товара
-            this.showTab('add-product');
+        this.showTab('add-product');
+    }
+    
+    async deleteProduct(productId) {
+        if (!confirm('Удалить этот товар?')) return;
+        
+        this.products = this.products.filter(p => p.id !== productId);
+        await this.autoSaveProducts();
+        this.renderProducts();
+    }
+}
+
+// ========== ГЛОБАЛЬНЫЕ ФУНКЦИИ ==========
+
+function showTab(tabId) {
+    window.admin?.showTab(tabId);
+}
+
+function logout() {
+    localStorage.removeItem('admin_authenticated');
+    window.location.href = 'login.html';
+}
+
+function previewImage(url) {
+    const preview = document.getElementById('image-preview');
+    if (preview) {
+        preview.src = url;
+        preview.style.display = 'block';
+        document.getElementById('preview-text').style.display = 'none';
+    }
+}
+
+// ========== ИНИЦИАЛИЗАЦИЯ ==========
+
+let admin;
+document.addEventListener('DOMContentLoaded', () => {
+    admin = new FullAutoAdmin();
+    window.admin = admin;
+});
+
+// Экспорт для HTML
+window.showTab = showTab;
+window.logout = logout;
+window.previewImage = previewImage;
+
+// Стили для анимаций
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInUp {
+        from {
+            transform: translateY(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
         }
     }
-
-    // Глобальные функции для HTML
-    function showTab(tabId) {
-        if (window.adminPanel) {
-            adminPanel.showTab(tabId);
-        }
-    }
-
-    function logout() {
-        localStorage.removeItem('admin_authenticated');
-        window.location.href = 'login.html';
-    }
-
-    function previewImage(url) {
-        const preview = document.getElementById('image-preview');
-        if (preview) {
-            preview.src = url;
-            preview.style.display = 'block';
-            document.getElementById('preview-text').style.display = 'none';
-        }
-    }
-
-    // Инициализация при загрузке
-    let adminPanel;
-    document.addEventListener('DOMContentLoaded', () => {
-        adminPanel = new AutoAdminPanel();
-        window.adminPanel = adminPanel;
-    });
-
-        // Экспортируем функции для кнопок в HTML
-        window.showTab = showTab;
-        window.logout = logout;
-        window.previewImage = previewImage;
-        EOF
+`;
+document.head.appendChild(style);
+EOF
