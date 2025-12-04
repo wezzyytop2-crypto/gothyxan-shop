@@ -1,10 +1,30 @@
 {
-  "id": 4,
-  "name": "FLARED JEANS",
-  "category": "men",
-  "price": 89$,
-  "image": "balenciaga_jeans_1.jpg",
-  "description": "High-waisted denim with retro flare silhouette. Made from premium stretch cotton for comfort and movement. Vintage-inspired wash with subtle distressing details.",
-  "sizes": ["S", "M", "L", "XL"],
-  "inStock": true
+  "products": [
+    {
+      "id": 1,
+      "name": "FLARED JEANS",
+      "category": "women",
+      "price": 89,
+      "currency": "€",
+      "image": "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+      "description": "High-waisted denim with retro flare silhouette. Made from premium stretch cotton for comfort and movement. Vintage-inspired wash with subtle distressing details.",
+      "sizes": ["26/XS", "28/S", "30/M", "32/L", "34/XL"],
+      "colors": ["blue", "black"],
+      "inStock": true,
+      "tags": ["new", "bestseller"]
+    },
+    {
+      "id": 2,
+      "name": "OMEN HOODIE",
+      "category": "omen",
+      "price": 120,
+      "currency": "€",
+      "image": "https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+      "description": "Oversized hoodie with embroidered OMEN logo. Heavyweight cotton blend for maximum comfort.",
+      "sizes": ["S", "M", "L", "XL"],
+      "colors": ["black", "gray"],
+      "inStock": true,
+      "tags": ["new", "omen"]
+    }
+  ]
 }
