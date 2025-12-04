@@ -1,0 +1,48 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "name": "FLARED JEANS",
+      "category": "women",
+      "price": 89,
+      "currency": "€",
+      "image": "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+      "description": "High-waisted denim with retro flare silhouette. Made from premium stretch cotton for comfort and movement.",
+      "sizes": ["26/XS", "28/S", "30/M", "32/L", "34/XL"],
+      "inStock": true
+    },
+    {
+      "id": 2,
+      "name": "OMEN HOODIE",
+      "category": "omen",
+      "price": 120,
+      "currency": "€",
+      "image": "https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+      "description": "Oversized hoodie with embroidered OMEN logo. Heavyweight cotton blend.",
+      "sizes": ["S", "M", "L", "XL"],
+      "inStock": true
+    },
+    {
+      "id": 3,
+      "name": "TECH CARGO PANTS",
+      "category": "men",
+      "price": 110,
+      "currency": "€",
+      "image": "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+      "description": "Technical cargo pants with multiple pockets. Water-resistant fabric.",
+      "sizes": ["S", "M", "L", "XL"],
+      "inStock": true
+    },
+    {
+      "id": 4,
+      "name": "LEATHER JACKET",
+      "category": "outerwear",
+      "price": 250,
+      "currency": "€",
+      "image": "https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+      "description": "Genuine leather biker jacket with metal zippers.",
+      "sizes": ["S", "M", "L"],
+      "inStock": true
+    }
+  ]
+}

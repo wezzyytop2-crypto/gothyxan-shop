@@ -1,0 +1,151 @@
+cat > cart.html << 'EOF'
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Корзина - GOTHYXAN</title>
+    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-top">
+                <div class="logo">
+                    <a href="./">
+                        <span class="logo-text">GOTHYXAN</span>
+                        <span class="logo-subtext">OFFICIAL STORE</span>
+                    </a>
+                </div>
+                
+                <nav class="main-nav">
+                    <ul>
+                        <li><a href="./">HOME</a></li>
+                        <li><a href="./women.html">WOMEN</a></li>
+                        <li><a href="./men.html">MEN</a></li>
+                        <li><a href="./outerwear.html">OUTERWEAR</a></li>
+                        <li><a href="./omen.html">OMEN</a></li>
+                        <li><a href="./new-collection.html">NEW COLLECTION</a></li>
+                        <li><a href="./about.html">ABOUT</a></li>
+                    </ul>
+                </nav>
+                
+                <div class="header-actions">
+                    <a href="./cart.html" class="cart-btn">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span class="cart-count">0</span>
+                    </a>
+                    <button class="menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container" style="padding: 100px 20px;">
+            <h1 style="margin-bottom: 40px;">КОРЗИНА</h1>
+            <div id="cart-container">
+                <!-- Корзина загружается через JavaScript -->
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>GOTHYXAN</h3>
+                    <p>Официальный интернет-магазин</p>
+                </div>
+                <div class="footer-section">
+                    <h3>ИНФОРМАЦИЯ</h3>
+                    <ul>
+                        <li><a href="./delivery.html">Доставка и оплата</a></li>
+                        <li><a href="./about.html">О нас</a></li>
+                        <li><a href="./contacts.html">Контакты</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>КОНТАКТЫ</h3>
+                    <p>Email: info@gothyxan.com</p>
+                    <p>Телефон: +7 (999) 123-45-67</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 GOTHYXAN. Все права защищены.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Простая корзина для cart.html
+        document.addEventListener('DOMContentLoaded', function() {
+            const cart = JSON.parse(localStorage.getItem('gothyxan_cart')) || [];
+            const container = document.getElementById('cart-container');
+            
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 100px 20px;">
+                        <h2 style="margin-bottom: 20px; color: #888;">КОРЗИНА ПУСТА</h2>
+                        <p style="margin-bottom: 30px; color: #666;">Добавьте товары из каталога</p>
+                        <a href="./" class="btn">ПЕРЕЙТИ В МАГАЗИН</a>
+                    </div>
+                `;
+                return;
+            }
+            
+            let total = 0;
+            const itemsHtml = cart.map((item, index) => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+                
+                return `
+                    <div style="display: flex; align-items: center; padding: 20px; border-bottom: 1px solid #333; gap: 20px;">
+                        <img src="${item.image || 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80'}" 
+                             style="width: 100px; height: 100px; object-fit: cover; border-radius: 5px;">
+                        <div style="flex: 1;">
+                            <h3 style="margin-bottom: 10px;">${item.name}</h3>
+                            <p>${item.price} € × ${item.quantity} = ${itemTotal} €</p>
+                        </div>
+                        <button onclick="removeFromCart(${index})" style="background: #f44336; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">
+                            УДАЛИТЬ
+                        </button>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = `
+                ${itemsHtml}
+                <div style="margin-top: 40px; text-align: right;">
+                    <h2>ИТОГО: ${total} €</h2>
+                    <button onclick="checkout()" class="btn" style="margin-top: 20px; padding: 15px 40px;">
+                        ОФОРМИТЬ ЗАКАЗ
+                    </button>
+                </div>
+            `;
+            
+            // Обновляем счетчик в шапке
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            document.querySelector('.cart-count').textContent = totalItems;
+        });
+        
+        function removeFromCart(index) {
+            const cart = JSON.parse(localStorage.getItem('gothyxan_cart')) || [];
+            cart.splice(index, 1);
+            localStorage.setItem('gothyxan_cart', JSON.stringify(cart));
+            location.reload();
+        }
+        
+        function checkout() {
+            alert('Заказ оформлен! Мы свяжемся с вами для подтверждения.');
+            localStorage.removeItem('gothyxan_cart');
+            location.href = './';
+        }
+    </script>
+</body>
+</html>
+EOF

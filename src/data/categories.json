@@ -1,0 +1,28 @@
+{
+  "categories": [
+    {
+      "id": "women",
+      "name": "WOMEN",
+      "slug": "women",
+      "image": "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+    },
+    {
+      "id": "men",
+      "name": "MEN",
+      "slug": "men",
+      "image": "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+    },
+    {
+      "id": "outerwear",
+      "name": "OUTERWEAR",
+      "slug": "outerwear",
+      "image": "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+    },
+    {
+      "id": "omen",
+      "name": "OMEN",
+      "slug": "omen",
+      "image": "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+    }
+  ]
+}
